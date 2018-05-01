@@ -10,6 +10,7 @@
 #include "elements/TETRA1.h"
 #include "elements/QUADTH.h"
 #include "elements/TRIANGLE4.h"
+#include "elements/TRIANGLE_THERMO.h"
 
 namespace nla3d {
 
@@ -68,6 +69,11 @@ void ElementFactory::createElements (ElementType elId, const uint32 n, std::vect
       case ElementType::QUADTH:
         for (uint32 i = 0; i < n; i++) {
           ptr.push_back(new ElementQUADTH());
+        }
+        break;
+      case ElementType::TRIANGLE_THERMO:
+        for (uint32 i = 0; i < n; i++) {
+          ptr.push_back(new ElementTRIANGLE_THERMO());
         }
         break;
       case ElementType::SurfaceLINETH:
