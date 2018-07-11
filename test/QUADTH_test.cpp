@@ -63,7 +63,6 @@ int main (int argc, char* argv[]) {
     el.k = 0.018;
   }
 
-
   ind = md.getCellsByAttribute("TYPE", 2);
   sind = storage.createElements(ind.size(), SurfaceLINETH());
   for (uint32 i = 0; i < sind.size(); i++) {
