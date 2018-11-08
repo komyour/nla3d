@@ -120,8 +120,8 @@ target_link_libraries(nla3d nla3d_lib)
 add_executable(nla3d_truss ${NLA3D_TRUSS_APP_SOURCES})
 target_link_libraries(nla3d_truss nla3d_lib)
 
-add_executable(triangle_termo ${NLA3D_TRIANGLE_TERMO_APP_SOURCES})
-target_link_libraries(triangle_termo nla3d_lib)
+#add_executable(triangle_termo ${NLA3D_TRIANGLE_TERMO_APP_SOURCES})
+#target_link_libraries(triangle_termo nla3d_lib)
 
 # Add logic to INSTALL.vcproj to copy app.exe to destination directory
 install (TARGETS nla3d

@@ -228,4 +228,102 @@ double ElementIsoParamHEXAHEDRON::volume() {
   return volume;
 }
 
+
+void ElementIsoParamTETRA10::makeJacob() {
+  const uint16 dim = 4; // количество локальных координат
+  const uint16 nodes_num = 10;
+
+  // bound user-provided intOrder
+  intOrder = (intOrder < 1) ? 1 : intOrder;
+  intOrder = (intOrder > 3) ? 3 : intOrder;
+  i_int = intOrder-1;
+
+  math::Mat<dim, dim> Jacob; //Jacob inv matrix
+
+  det.clear();
+  det.assign(_np_tetra[i_int], 0.0);
+
+  NiXj.clear();
+  NiXj.resize(_np_tetra[i_int]);
+
+  double inv_det;
+
+  math::Mat<nodes_num, dim> dN; // form function derivatives
+  math::Mat<dim, dim> J;
+
+  for (uint16 np=0; np < _np_tetra[i_int]; np++) {
+    QuadVol3D q = _table_tetra[i_int][np];
+    dN = formFuncDeriv(q.l1, q.l2, q.l3, q.l4);
+
+    J.zero();
+
+    for (uint16 nod = 0; nod < nodes_num; nod++) {
+      math::Vec<3> pos = storage->getNode(getNodeNumber(nod)).pos;
+      for (uint16 j = 0; j < dim; j++) {
+          J[0][j] += 1;
+      }
+      for (uint16 i = 1; i < dim; i++)
+        for (uint16 j = 0; j < dim; j++)
+          J[i][j] += dN[nod][i] * pos[j];
+    }
+
+    det[np] = J.det(); // determinant of Jacob matrix
+    // check for geometry form error 
+    LOG_IF(det[np] < 1.0e-20, ERROR) << "Determinant is too small (" << det[np] << ") in element = " << elNum;
+    // обращение матрицы Якоби
+    inv_det = 1.0/det[np];
+    Jacob = J.inv(det[np]);
+
+    // производные функций формы по глоб. координатам
+    for (uint16 nod = 0; nod < nodes_num; nod++)
+      for (uint16 i=0; i < dim; i++)
+        for (uint16 j=0; j< dim; j++)
+          NiXj[np][nod][i] += Jacob[i][j] * dN[nod][j];
+  }
+}
+
+
+math::Vec<10> ElementIsoParamTETRA10::formFunc(double l1, double l2, double l3, double l4) {
+  return math::Vec<10>(l1 * (2.0 * l1 - 1.0),
+                       l2 * (2.0 * l2 - 1.0),
+                       l3 * (2.0 * l3 - 1.0),
+                       l4 * (2.0 * l4 - 1.0),
+                       4.0 * l2 * l1, 
+                       4.0 * l2 * l3, 
+                       4.0 * l3 * l1, 
+                       4.0 * l4 * l1,
+                       4.0 * l4 * l2,
+                       4.0 * l3 * l4 
+                       );
+}
+
+
+math::Vec<10> ElementIsoParamTETRA10::formFunc(uint16 np) {
+  QuadVol3D q = _table_tetra[i_int][np];
+  return formFunc(q.l1, q.l2, q.l3, q.l4);
+}
+
+
+math::Mat<10, 4> ElementIsoParamTETRA10::formFuncDeriv(double l1, double l2, double l3, double l4) {
+  return math::Mat<10, 4> (4.0 * l1 - 1       , 0.0                , 0.0                , 0.0         , 
+                           0.0                , 4.0 * l2 - 1       , 0.0                , 0.0         , 
+                           0.0                , 0.0                , 4.0 * l3 - 1       , 0.0         , 
+                           0.0                , 0.0                , 0.0                , 4.0 * l4 - 1,                      
+                           4.0 * l2           , 4.0 * l1           , 0.0                , 0.0         ,
+                           0.0                , 4.0 * l3           , 4.0 * l2           , 0.0         ,
+                           4.0 * l3           , 0.0                , 4.0 * l1           , 0.0         , 
+                           4.0 * l4           , 0.0                , 0.0                , 4.0 * l1    ,  
+                           0.0                , 4.0 * l4           , 0.0                , 4.0 * l2    ,  
+                           0.0                , 0.0                , 4.0 * l4           , 4.0 * l3    );
+}
+
+
+double ElementIsoParamTETRA10::volume() {
+  double volume = 0.0;
+  for (uint16 np = 0; np < _np_tetra[i_int]; np++)
+      volume += intWeight(np);
+  return volume;
+}
+
+
 } // namespace nla3d

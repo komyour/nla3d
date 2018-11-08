@@ -243,6 +243,19 @@ class ElementTETRA : public Element {
     }
 };
 
+class ElementQUADTETRA : public Element {
+  public:
+    ElementQUADTETRA() {
+      shape = ElementShape::QUADRATIC_TETRA;
+      nodes = new uint32[getNNodes()];
+    }
+
+    ElementQUADTETRA& operator= (const ElementQUADTETRA& from) {
+      Element::operator= (from);
+      return *this;
+    }
+};
+
 
 class ElementHEXAHEDRON : public Element {
   public:

@@ -36,6 +36,21 @@ struct QuadPt3D {
   double w;
 };
 
+struct QuadVol2D {
+  double l1;
+  double l2;
+  double l3;
+  double w;
+};
+
+struct QuadVol3D {
+  double l1;
+  double l2;
+  double l3;
+  double l4;
+  double w;
+};
+
 
 // gauss quadrature for 1D line from (-1) to (1)
 // 1st order
@@ -177,7 +192,6 @@ static const QuadPt3D _quad_hexahedron_o3[] = {
   {+0.7745966692414834, +0.7745966692414834, +0.7745966692414834, +0.1714677640603567}
 };
 
-
 static const uint16 _np_hexahedron[] = {
   sizeof(_quad_hexahedron_o1) / sizeof(QuadPt3D),
   sizeof(_quad_hexahedron_o2) / sizeof(QuadPt3D),
@@ -191,6 +205,41 @@ static const QuadPt3D* _table_hexahedron[] = {
   _quad_hexahedron_o3
 };
 
+
+// gauss quadrature for tetra from (0,0,0,0) to (1,1,1,1)
+// 1st order
+static const QuadVol3D _quad_tetra_o1[] = {
+  {0.25, 0.25, 0.25, 0.25, 1.00}
+};
+// 2nd order
+static const QuadVol3D _quad_tetra_o2[] = {
+  {0.5854102, 0.1381966, 0.1381966, 0.1381966, 0.25},
+  {0.1381966, 0.5854102, 0.1381966, 0.1381966, 0.25},
+  {0.1381966, 0.1381966, 0.5854102, 0.1381966, 0.25},
+  {0.1381966, 0.1381966, 0.1381966, 0.5854102, 0.25}
+};
+
+// 3d order
+static const QuadVol3D _quad_tetra_o3[] = {
+  {0.25, 0.25, 0.25, 0.25, -0.8},
+  {0.33, 0.66, 0.66, 0.66, 0.45},
+  {0.66, 0.33, 0.66, 0.66, 0.45},
+  {0.66, 0.66, 0.33, 0.66, 0.45},
+  {0.66, 0.66, 0.66, 0.33, 0.45}
+};
+
+static const uint16 _np_tetra[] = {
+  sizeof(_quad_tetra_o1) / sizeof(QuadVol3D),
+  sizeof(_quad_tetra_o2) / sizeof(QuadVol3D),
+  sizeof(_quad_tetra_o3) / sizeof(QuadVol3D)
+};
+
+
+static const QuadVol3D* _table_tetra[] = {
+  _quad_tetra_o1,
+  _quad_tetra_o2,
+  _quad_tetra_o3
+};
 
 class ElementIsoParamLINE : public ElementLINE {
   public:
@@ -237,6 +286,27 @@ class ElementIsoParamQUAD : public ElementQUAD {
     uint16 i_int = 0; // index of integration scheme
 };
 
+class ElementIsoParamTETRA10 : public ElementQUADTETRA {
+  public:
+    std::vector<math::Mat<10, 4> > NiXj; //derivates form function / local coordinates
+    std::vector<double> det;  //Jacobian
+
+    // function to calculate all staff for isoparametric FE
+    void makeJacob(); 
+    double intWeight(uint16 np);
+    double volume();
+    void np2rst(uint16 np, double *xi); //by number of gauss point find local coordinates
+    uint16 nOfIntPoints();
+    // get form function values in local point (l1, l2, l3, l4)
+    math::Vec<10> formFunc(double l1, double l2, double l3, double l4);
+    // get form function values in integration point np
+    math::Vec<10> formFunc(uint16 np);
+    // get form function derivatives (vs. r,s,t) in local point (l1,l2,l3,l4)
+    math::Mat<10, 4> formFuncDeriv(double l1, double l2, double l3, double l4);
+
+  protected:
+    uint16 i_int = 0; // index of integration scheme
+};
 
 class ElementIsoParamHEXAHEDRON : public ElementHEXAHEDRON {
   public:
@@ -299,14 +369,12 @@ inline uint16 ElementIsoParamQUAD::nOfIntPoints() {
   return _np_quad[i_int];
 }
 
-
 inline double ElementIsoParamHEXAHEDRON::intWeight(uint16 np) {
   assert(np < _np_hexahedron[i_int]);
   assert(det.size() != 0);
 
   return _table_hexahedron[i_int][np].w * det[np];
 }
-
 
 inline void ElementIsoParamHEXAHEDRON::np2rst (uint16 np, double *v) {
   assert(np < _np_hexahedron[i_int]);
@@ -318,6 +386,27 @@ inline void ElementIsoParamHEXAHEDRON::np2rst (uint16 np, double *v) {
 
 inline uint16 ElementIsoParamHEXAHEDRON::nOfIntPoints() {
   return _np_hexahedron[i_int];
+}
+
+inline double ElementIsoParamTETRA10::intWeight(uint16 np) {
+  assert(np < _np_tetra[i_int]);
+  assert(det.size() != 0);
+
+  return _table_tetra[i_int][np].w * det[np];
+}
+
+
+inline void ElementIsoParamTETRA10::np2rst (uint16 np, double *v) {
+  assert(np < _np_tetra[i_int]);
+  v[0] = _table_tetra[i_int][np].l1;
+  v[1] = _table_tetra[i_int][np].l2;
+  v[2] = _table_tetra[i_int][np].l3;
+  v[4] = _table_tetra[i_int][np].l4;
+}
+
+
+inline uint16 ElementIsoParamTETRA10::nOfIntPoints() {
+  return _np_tetra[i_int];
 }
 
 } // namespace nla3d
