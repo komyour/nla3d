@@ -10,11 +10,11 @@
 
 namespace nla3d {
 //4-node 2D QUAD  element for steady thermal analysis
-class ElementTETRA10 : public ElementIsoParamQUAD {
+class ElementTETRA10 : public ElementIsoParamTETRA10 {
   public:
   ElementTETRA10 () {
     intOrder = 2;
-    type = ElementType::QUADTH;
+    type = ElementType::TETRA10;
   }
   void pre();
   void buildK();
